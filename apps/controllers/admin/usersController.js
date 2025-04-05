@@ -1,5 +1,6 @@
 const DatabaseConnection = require("../../database/database");
 const { getUserObject } = require("../../models/user");
+const { updateUser } = require("../../services/userService");
 
 // GET all users
 exports.getAllUsers = async (req, res) => {
@@ -29,24 +30,40 @@ exports.createUser = async (req, res) => {
   await client.connect();
   const db = client.db("ReadiWeb");
 
-  const user = getUserObject(req.body);
+  // Add the role as part of the user object (admin can set roles)
+  const { username, email, password, role } = req.body;
+
+  // Ensure that the role is valid (you can also make this a constant or enum for better validation)
+  const validRoles = ["user", "uploader", "admin"];
+  if (!validRoles.includes(role)) {
+    return res.status(400).send("Invalid role");
+  }
+
+  const user = {
+    username,
+    email,
+    password, // Make sure to hash the password before saving it
+    role: role || "user", // Default to 'user' if no role is specified
+  };
+
   await db.collection("users").insertOne(user);
-  res.redirect("/admin/users");
+  res.redirect("/admin/users"); // Redirect to the admin user management page
 };
 
 // UPDATE user
 exports.updateUser = async (req, res) => {
-  const client = DatabaseConnection.getMongoClient();
-  await client.connect();
-  const db = client.db("ReadiWeb");
+  try {
+    const { role, ...updateData } = req.body;
+    const userId = req.params.id;
 
-  await db
-    .collection("users")
-    .updateOne(
-      { _id: new require("mongodb").ObjectId(req.params.id) },
-      { $set: req.body }
-    );
-  res.redirect("/admin/users");
+    // Call the shared updateUser function, passing false for normal user update
+    await updateUser(userId, updateData, false); // 'false' indicates it's not an admin update
+
+    res.redirect("/admin/users");
+  } catch (error) {
+    console.error(error);
+    res.status(400).send(error.message);
+  }
 };
 
 // DELETE user

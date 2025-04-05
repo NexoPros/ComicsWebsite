@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ReadiWeb - Comics</title>
+  </head>
+  <body>
+    <%- include('partial/header') %>
+    <div class="comics-list">
+      <h2>Latest Comics</h2>
+      <% comics.forEach(function(comic) { %>
+      <div class="comic-item">
+        <h3><%= comic.title %></h3>
+        <p><%= comic.description %></p>
+      </div>
+      <% }) %>
+    </div>
+    <%- include('partial/footer') %>
+  </body>
+</html>
